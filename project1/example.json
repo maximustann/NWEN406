@@ -1,18 +1,12 @@
 {
-    "value":"abc",
-	"count" : 1,
+    "value":"",
+	"count" : "0",
     "audit":{
-        "jordan":{
-		            "input":"",
-		            "output": "abc",
-		            "time":"unix time or timestamp",
-		            "index":0
 		}
 },
 	"order":[
-		"13.0.2.1",
-		"12.0.0.1",
-		"0.0.0.0"
+		"52.27.64.194",
+		"54.68.184.120"
 	]
 }
 
