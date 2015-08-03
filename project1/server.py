@@ -3,11 +3,34 @@ from flask import Flask, url_for, request, Response, jsonify, json, make_respons
 import requests
 from time import gmtime, strftime, sleep
 import json as js
-
+#from celery import Celery
 
 
 
 app = Flask(__name__)
+
+#app.config.update(
+#	CELERY_BROKER_URL = 'redis://localhost:6379',
+#	CELERY_RESULT_BACKEND = 'redis://localhost:6379'
+#	)
+
+
+
+#def make_celery(app):
+#	celery = Celery(app.import_name, broker = app.config['CELERY_BROKER_URL'])
+#	celery.conf.update(app.config)
+#	TaskBase = celery.Task
+#	class ContextTask(TaskBase):
+#		abstract = True
+#		def __call__(self, *args, **kwargs):
+#			with app.app_context():
+#				return TaskBase.__call__(self, *args, **kwargs)
+#	celery.Task = ContextTask
+#
+#	return celery
+
+
+#celery = make_celery(app)
 
 
 @app.route('/api', methods = ['GET', 'POST'])
@@ -18,7 +41,7 @@ def hello():
 	elif request.method == 'POST':
 		data = request.json
 		send(data)
-		log(data)
+		#log(data)
 		resp = make_response('', 202)
 		return resp
 
@@ -35,23 +58,30 @@ def loadLog():
         json_data = json.load(json_file)
         return json_data
 def log(json):
-    with open('log.txt', 'w') as outfile:
+    with open('log.json', 'w') as outfile:
         json.dump(data, outfile)
+
+#@celery.task()
+#def send_async(data):
+#	with app.app_context():
+#		send(data)
+
 
 def send(data):
 	msg = pack(data)
 	headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
 	while data["order"]:
 		for i in range(3):
-			addr = 'http://' + data["order"][0] + ":80/api"
+			addr = 'http://' + data["order"].pop(0) + ":80/api"
 			try:
 				print "Start trying..."
 				req = requests.post(addr, data = json.dumps(msg), headers = headers, timeout = 2)
-				return
+				if req.status_code == 202:
+					print "Send Successfully"
+					return
 			except Exception, e:
 				print e
-		data["order"].pop(0)
-	print "failed"
+	print "No more address"
 	return
 
 @app.route('/log')
