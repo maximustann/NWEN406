@@ -1,8 +1,8 @@
 
-from flask import Flask, url_for, request, Response, jsonify, json
+from flask import Flask, url_for, request, Response, jsonify, json, make_response
 import requests
 from time import gmtime, strftime, sleep
-import json
+import json as js
 
 
 
@@ -13,13 +13,23 @@ app = Flask(__name__)
 @app.route('/api', methods = ['GET', 'POST'])
 def hello():
 	if request.method == 'GET':
-            print loadLog()
+		print "Hello"
+		#print readLog()
 	elif request.method == 'POST':
-		json = request.json
-		send(json)
-                log(json)
-                resp = make_response("", 202)
+		data = request.json
+		send(data)
+		log(data)
+		resp = make_response('', 202)
 		return resp
+
+def log(data):
+	with open('log.json', 'w') as outfile:
+		js.dump(data, outfile)
+
+def readLog():
+	with open('log.json', 'r') as file:
+		data = js.load(file)
+	return data
 def loadLog():
     with open("log.json") as json_file:
         json_data = json.load(json_file)
@@ -36,13 +46,18 @@ def send(data):
 			addr = 'http://' + data["order"][0] + ":80/api"
 			try:
 				print "Start trying..."
-				req = requests.post(addr, data = json.dumps(msg), headers = headers, timeout = 1)
+				req = requests.post(addr, data = json.dumps(msg), headers = headers, timeout = 2)
 				return
 			except Exception, e:
 				print e
 		data["order"].pop(0)
 	print "failed"
 	return
+
+@app.route('/log')
+def returnLog():
+	data = readLog()
+	return js.dumps(data)
 
 def pack(data):
 	num = 1
