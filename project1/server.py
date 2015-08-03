@@ -6,6 +6,7 @@ import json as js
 
 
 
+
 app = Flask(__name__)
 
 
@@ -29,6 +30,13 @@ def readLog():
 	with open('log.json', 'r') as file:
 		data = js.load(file)
 	return data
+def loadLog():
+    with open("log.json") as json_file:
+        json_data = json.load(json_file)
+        return json_data
+def log(json):
+    with open('log.txt', 'w') as outfile:
+        json.dump(data, outfile)
 
 def send(data):
 	msg = pack(data)
