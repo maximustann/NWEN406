@@ -2,6 +2,7 @@
 from flask import Flask, url_for, request, Response, jsonify, json
 import requests
 from time import gmtime, strftime, sleep
+import json
 
 
 
@@ -12,11 +13,20 @@ app = Flask(__name__)
 @app.route('/api', methods = ['GET', 'POST'])
 def hello():
 	if request.method == 'GET':
-		return "Hello, world"
+            print loadLog()
 	elif request.method == 'POST':
 		json = request.json
 		send(json)
-		return "202"
+                log(json)
+                resp = make_response("", 202)
+		return resp
+def loadLog():
+    with open("log.json") as json_file:
+        json_data = json.load(json_file)
+        return json_data
+def log(json):
+    with open('log.txt', 'w') as outfile:
+        json.dump(data, outfile)
 
 def send(data):
 	msg = pack(data)
