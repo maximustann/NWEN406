@@ -3,19 +3,19 @@ from flask import Flask, url_for, request, Response, jsonify, json, make_respons
 import requests
 from time import gmtime, strftime, sleep
 import json as js
-#from celery import Celery
+import threading
+import atexit
+from celery import Celery
 
 
 
 app = Flask(__name__)
 
 #app.config.update(
-#	CELERY_BROKER_URL = 'redis://localhost:6379',
-#	CELERY_RESULT_BACKEND = 'redis://localhost:6379'
-#	)
-
-
-
+#    CELERY_BROKER_URL='redis://localhost:6379',
+#	    CELERY_RESULT_BACKEND='redis://localhost:6379'
+#		)
+#
 #def make_celery(app):
 #	celery = Celery(app.import_name, broker = app.config['CELERY_BROKER_URL'])
 #	celery.conf.update(app.config)
@@ -28,57 +28,51 @@ app = Flask(__name__)
 #	celery.Task = ContextTask
 #
 #	return celery
-
-
+#
+#
 #celery = make_celery(app)
+#
 
-
+threads = []
 @app.route('/api', methods = ['GET', 'POST'])
 def hello():
 	if request.method == 'GET':
 		print "Hello"
 		#print readLog()
 	elif request.method == 'POST':
+		#threads = []
+		global threads
 		data = request.json
-		send(data)
-		#log(data)
+		t = threading.Thread(target = worker, args = (data, validate(data)))
+		threads.append(t)
+		t.start()
 		resp = make_response('', 202)
 		return resp
 
-def log(data):
-	with open('log.json', 'w') as outfile:
-		js.dump(data, outfile)
 
-def readLog():
-	with open('log.json', 'r') as file:
-		data = js.load(file)
-	return data
-def loadLog():
-    with open("log.json") as json_file:
-        json_data = json.load(json_file)
-        return json_data
-def log(json):
-    with open('log.json', 'w') as outfile:
-        json.dump(data, outfile)
+def validate(data):
+	if 'max' in data['audit'].keys():
+		return True
+	else:
+		return False
 
-#@celery.task()
-#def send_async(data):
-#	with app.app_context():
-#		send(data)
+def worker(data, flag):
+	send(data, flag)
 
-
-def send(data):
-	msg = pack(data)
-	headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+def send(data, flag):
+	msg = pack(data, flag)
+	headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
 	while data["order"]:
 		for i in range(3):
 			addr = 'http://' + data["order"].pop(0) + ":80/api"
 			try:
-				print "Start trying..."
+				print "Start sending to: " + addr
 				req = requests.post(addr, data = json.dumps(msg), headers = headers, timeout = 2)
 				if req.status_code == 202:
 					print "Send Successfully"
 					return
+				else:
+					print req
 			except Exception, e:
 				print e
 	print "No more address"
@@ -89,19 +83,23 @@ def returnLog():
 	data = readLog()
 	return js.dumps(data)
 
-def pack(data):
+def pack(data, flag):
 	num = 1
-	num += int(data['count'])
+	num += int(data['count']) 
 	data['count'] = num
 	myvalue = "blasomething"
 	myJson = {
             "input": data['value'],
             "output": data['value'] + myvalue,
             "time": strftime("%a, %d, %b %Y %H:%M:%S GMT", gmtime()),
-            "index": len(data['audit'])
+            "index": num - 1
             }
+	if flag:
+		data['audit']['max'].append(myJson)
+	else:
+		myJsonList = [myJson]
+		data['audit']['max'] = myJsonList
 	data['value'] += myvalue
-	data['audit']["max"] = myJson
 	return data
 
 
