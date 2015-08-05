@@ -1,66 +1,86 @@
 
-from flask import Flask, url_for, request, Response, jsonify, json
+from flask import Flask, url_for, request, Response, jsonify, json, make_response
 import requests
 from time import gmtime, strftime, sleep
+import json as js
 
 
 
 
 app = Flask(__name__)
-data = None
-# Make the WSGI interface avaiable a the top level so wfastcgi can get it 
-wsgi_app = app.wsgi_app
+
 
 @app.route('/api', methods = ['GET', 'POST'])
 def hello():
-    if request.method == 'GET':
-        return "Hello, world"
-    elif request.method == 'POST':
-        if check(request.json):
-            return "201"
-        else:
-            return "400"
+	if request.method == 'GET':
+		print "Hello"
+		#print readLog()
+	elif request.method == 'POST':
+		data = request.json
+		send(data)
+		#log(data)
+		resp = make_response('', 202)
+		return resp
 
-def check(rec):
-    global data
-    data = rec
-    return True
+def log(data):
+	with open('log.json', 'w') as outfile:
+		js.dump(data, outfile)
 
-@app.teardown_appcontext
-def send(exception):
-    global data
-    msg = pack(data)
-    headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
-    while True:
-        for i in range(3):
-            addr = 'http://' + data["order"][0] + ":5555/api"
-            try:
-                req = requests.post(addr, data = json.dumps(msg), headers = headers, timeout = 0.001)
-                return
-            except Exception, e:
-                print e
-        data["order"].pop(0)
-    return
+def readLog():
+	with open('log.json', 'r') as file:
+		data = js.load(file)
+	return data
+def loadLog():
+    with open("log.json") as json_file:
+        json_data = json.load(json_file)
+        return json_data
+def log(json):
+    with open('log.json', 'w') as outfile:
+        json.dump(data, outfile)
+
+def send(data):
+	msg = pack(data)
+	headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+	while data["order"]:
+		for i in range(3):
+			addr = 'http://' + data["order"].pop(0) + ":80/api"
+			try:
+				print "Start trying..."
+				req = requests.post(addr, data = json.dumps(msg), headers = headers, timeout = 2)
+				if req.status_code == 202:
+					print "Send Successfully"
+					return
+			except Exception, e:
+				print e
+	print "failed"
+	return
+
+@app.route('/log')
+def returnLog():
+	data = readLog()
+	return js.dumps(data)
 
 def pack(data):
-    data['count'] += 1
-    myJson = {
+	num = 1
+	num += int(data['count'])
+	data['count'] = num
+	myvalue = "blasomething"
+	myJson = {
             "input": data['value'],
             "output": data['value'] + myvalue,
             "time": strftime("%a, %d, %b %Y %H:%M:%S GMT", gmtime()),
             "index": len(data['audit'])
             }
-    data['value'] += myvalue
-    data['audit']["max"] = myJson
-    return data
+	data['value'] += myvalue
+	data['audit']["max"] = myJson
+	return data
 
 
 
 if __name__ == "__main__":
     import os
-    HOST = os.environ.get('SERVER_HOST', 'localhost')
     try:
-        PORT = int(os.environ.get('SERVER_HOST', 5556))
+        PORT = int(os.environ.get('SERVER_HOST', 800))
     except ValueError:
-        PORT = 5556
-    app.run(HOST, PORT)
+        PORT = 800
+    app.run("172.31.8.251", PORT)
