@@ -23,6 +23,11 @@ def hello():
 
 def showData(data):
     print data
+
+@app.route('/index.html')
+def healthCheck():
+    resp = make_response('', 200)
+    return resp
 #def log(data):
 	#with open('log.json', 'w') as outfile:
 		#js.dump(data, outfile)
