@@ -3,85 +3,121 @@ from flask import Flask, url_for, request, Response, jsonify, json, make_respons
 import requests
 from time import gmtime, strftime, sleep
 import json as js
-
-
+import threading
+import atexit
+import math
 
 
 app = Flask(__name__)
 
+#app.config.update(
+#    CELERY_BROKER_URL='redis://localhost:6379',
+#	    CELERY_RESULT_BACKEND='redis://localhost:6379'
+#		)
+#
+#def make_celery(app):
+#	celery = Celery(app.import_name, broker = app.config['CELERY_BROKER_URL'])
+#	celery.conf.update(app.config)
+#	TaskBase = celery.Task
+#	class ContextTask(TaskBase):
+#		abstract = True
+#		def __call__(self, *args, **kwargs):
+#			with app.app_context():
+#				return TaskBase.__call__(self, *args, **kwargs)
+#	celery.Task = ContextTask
+#
+#	return celery
+#
+#
+#celery = make_celery(app)
+#
 
+#threads = []
 @app.route('/api', methods = ['GET', 'POST'])
 def hello():
 	if request.method == 'GET':
 		print "Hello"
 		#print readLog()
 	elif request.method == 'POST':
+		#threads = []
+		#global threads
 		data = request.json
-		igd = evaluate(data)
-                
-		resp = make_response(json.dumps(igd), 202)
+                igd = evaluate(data)
+		#t = threading.Thread(target = worker, args = (data, validate(data)))
+		#threads.append(t)
+		#t.start()
+		resp = Response(response = json.dumps(igd), status = 200, 
+                                mimetype = "application/json")
 		return resp
 
 def evaluate(data):
-    front = data['front']
-    trueFront = data['trueFront']
-    igd = []
-    for row in trueFront:
-        igd.append(minimumEdistance(row, front))
-    return igd
+    front = data["front"]
+    trueFront = data["trueFront"]
+    igd = 0
+    for item in trueFront:
+        igd = igd + math.sqrt(minimumEdistance(item, front))
+    return igd/length(trueFront)
 
-def minimumEdistance(row, front):
+def minimumEdistance(item, front):
     result = []
-    for instances in front:
-        result = distance(row, instances)
+    for instance in front:
+        result.append(distance(instance, item))
     return min(result)
 
-def distance(row, instances):
-    return (row[0] - instances[0])^2 + (row[1] - instances[1])^2
+def distance(instance, item):
+    value = (float(instance[0]) - float(item[0]))**2 + (float(instance[1]) - float(item[1]))**2
+    return value
 
-@app.route('/index.html')
-def healthCheck():
-    resp = make_response('', 200)
-    return resp
-#def log(data):
-	#with open('log.json', 'w') as outfile:
-		#js.dump(data, outfile)
-
-#def send(data):
-	#msg = pack(data)
-	#headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+#def validate(data):
+	#if 'max' in data['audit'].keys():
+		#return True
+	#else:
+		#return False
+#
+#def worker(data, flag):
+	#send(data, flag)
+#
+#def send(data, flag):
+	#msg = pack(data, flag)
+	#headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
 	#while data["order"]:
 		#for i in range(3):
 			#addr = 'http://' + data["order"].pop(0) + ":80/api"
 			#try:
-				#print "Start trying..."
+				#print "Start sending to: " + addr
 				#req = requests.post(addr, data = json.dumps(msg), headers = headers, timeout = 2)
 				#if req.status_code == 202:
 					#print "Send Successfully"
 					#return
+				#else:
+					#print req
 			#except Exception, e:
 				#print e
-	#print "failed"
+	#print "No more address"
 	#return
-
+#
 #@app.route('/log')
 #def returnLog():
 	#data = readLog()
 	#return js.dumps(data)
-
-#def pack(data):
+#
+#def pack(data, flag):
 	#num = 1
-	#num += int(data['count'])
+	#num += int(data['count']) 
 	#data['count'] = num
 	#myvalue = "blasomething"
 	#myJson = {
             #"input": data['value'],
             #"output": data['value'] + myvalue,
             #"time": strftime("%a, %d, %b %Y %H:%M:%S GMT", gmtime()),
-            #"index": len(data['audit'])
+            #"index": num - 1
             #}
+	#if flag:
+		#data['audit']['max'].append(myJson)
+	#else:
+		#myJsonList = [myJson]
+		#data['audit']['max'] = myJsonList
 	#data['value'] += myvalue
-	#data['audit']["max"] = myJson
 	#return data
 
 
@@ -89,7 +125,7 @@ def healthCheck():
 if __name__ == "__main__":
     import os
     try:
-        PORT = int(os.environ.get('SERVER_HOST', 80))
+        PORT = int(os.environ.get('SERVER_HOST', 8081))
     except ValueError:
-        PORT = 80
-    app.run("172.31.9.21", PORT)
+        PORT = 8081
+    app.run("127.0.0.1", PORT)
