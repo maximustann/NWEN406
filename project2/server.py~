@@ -17,11 +17,32 @@ def hello():
 		#print readLog()
 	elif request.method == 'POST':
 		data = request.json
-		resp = make_response('', 202)
+		igd = evaluate(data)
+                
+		resp = make_response(json.dumps(igd), 202)
 		return resp
 
-def showData(data):
-    print data
+def evaluate(data):
+    front = data['front']
+    trueFront = data['trueFront']
+    igd = []
+    for row in trueFront:
+        igd.append(minimumEdistance(row, front))
+    return igd
+
+def minimumEdistance(row, front):
+    result = []
+    for instances in front:
+        result = distance(row, instances)
+    return min(result)
+
+def distance(row, instances):
+    return (row[0] - instances[0])^2 + (row[1] - instances[1])^2
+
+@app.route('/index.html')
+def healthCheck():
+    resp = make_response('', 200)
+    return resp
 #def log(data):
 	#with open('log.json', 'w') as outfile:
 		#js.dump(data, outfile)
@@ -71,4 +92,4 @@ if __name__ == "__main__":
         PORT = int(os.environ.get('SERVER_HOST', 80))
     except ValueError:
         PORT = 80
-    app.run("172.31.8.251", PORT)
+    app.run("172.31.9.21", PORT)

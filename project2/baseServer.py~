@@ -1,0 +1,6 @@
+from BaseHTTPServer import HTTPServer
+from SimpleHTTPServer import SimpleHTTPServerHandler
+
+serveraddr = ('', 8765)
+serv = HTTPServer(serveraddr, SimpleHTTPRequestHandler)
+serv.serve_forever()

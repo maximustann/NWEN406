@@ -17,12 +17,26 @@ def hello():
 		#print readLog()
 	elif request.method == 'POST':
 		data = request.json
-		showData(data)
-		resp = make_response('', 202)
+		igd = evaluate(data)
+		resp = make_response(json.dumps(igd), 202)
 		return resp
 
-def showData(data):
-    print data
+def evaluate(data):
+    front = data['front']
+    trueFront = data['trueFront']
+    igd = []
+    for row in trueFront:
+        igd.append(minimumEdistance(row, front))
+    return igd
+
+def minimumEdistance(row, front):
+    result = []
+    for instances in front:
+        result = distance(row, instances)
+    return min(result)
+
+def distance(row, instances):
+    return (row[0] - instances[0])^2 + (row[1] - instances[1])^2
 
 @app.route('/index.html')
 def healthCheck():
