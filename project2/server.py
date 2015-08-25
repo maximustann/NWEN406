@@ -17,6 +17,7 @@ def hello():
 		#print readLog()
 	elif request.method == 'POST':
 		data = request.json
+		showData(data)
 		resp = make_response('', 202)
 		return resp
 
@@ -71,4 +72,4 @@ if __name__ == "__main__":
         PORT = int(os.environ.get('SERVER_HOST', 80))
     except ValueError:
         PORT = 80
-    app.run("172.31.8.251", PORT)
+    app.run("172.31.9.21", PORT)
