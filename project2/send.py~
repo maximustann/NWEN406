@@ -14,5 +14,4 @@ if __name__ == "__main__":
     data = readCSV("./2.csv")
     headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
     addr = "http://54.206.0.192:80/api"
-    #req = requests.post(addr, data = json.dumps(data), headers = headers)
-    req = requests.post(addr)
+    req = requests.post(addr, data = json.dumps(data), headers = headers)
